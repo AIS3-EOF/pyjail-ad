@@ -12,6 +12,9 @@ flask = "^2.2.2"
 epicbox = "^1.1.0"
 
 
+[tool.poetry.group.dev.dependencies]
+black = "^22.12.0"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
