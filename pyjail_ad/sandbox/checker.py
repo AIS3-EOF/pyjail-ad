@@ -1,10 +1,13 @@
 from .runner import run
 
-CHECKER_TEMPLATE = """
-{}
+CHECKER_TEMPLATE = """{}
 
 import sys
 print(check(sys.stdin.read()))
+"""
+
+DEFAULT_CHECKER = """def check(s):
+    return True
 """
 
 

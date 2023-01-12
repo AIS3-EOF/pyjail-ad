@@ -10,6 +10,8 @@ packages = [{include = "pyjail_ad"}]
 python = "^3.10"
 flask = "^2.2.2"
 epicbox = "^1.1.0"
+sqlalchemy = "^1.4.46"
+flask-sqlalchemy = "^3.0.2"
 
 
 [tool.poetry.group.dev.dependencies]

@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<main>
+    <h2>Login</h2>
+    <form method="post" action="/login">
+        <label for="token">Token</label>
+        <input name="token" id="token" required>
+        <button type="submit">Login</button>
+    </form>
+</main>
+{% endblock %}

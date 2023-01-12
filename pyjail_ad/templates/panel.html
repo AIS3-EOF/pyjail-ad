@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block title %}Panel{% endblock %}
+
+{% block content %}
+<main>
+    <h2>Team Info</h2>
+    <ul>
+        <li>Team id: {{ team.id }}</li>
+        <li>Team name: {{ team.name }}</li>
+        <li>Score: {{ team.score }}</li>
+    </ul>
+    <h2>Update checker</h2>
+    <form id="checker-form">
+        <p>
+            <label>Checker</label>
+            <textarea name="checker" rows="10"></textarea>
+        </p>
+        <button type="submit">Update</button>
+    </form>
+    <h2>Attack</h2>
+    <form id="attack-form">
+        <p>
+            <label>Target</label>
+            <select name="target" id="target">
+                {% for t in teams %}
+                <option value="{{ t.id }}">{{ t.name }}</option>
+                {% endfor %}
+            </select>
+        </p>
+        <p>
+            <label>Code</label>
+            <textarea name="code" rows="10"></textarea>
+        </p>
+        <button type="submit">Attack</button>
+    </form>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.js"
+    integrity="sha512-8RnEqURPUc5aqFEN04aQEiPlSAdE0jlFS/9iGgUyNtwFnSKCXhmB6ZTNl7LnDtDWKabJIASzXrzD0K+LYexU9g=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.css"
+    integrity="sha512-uf06llspW44/LZpHzHT6qBOIVODjWtv4MxCricRxkzvopAlSWnTf6hpZTFxuuZcuNE9CBQhqE0Seu1CoRk84nQ=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/theme/monokai.min.css"
+    integrity="sha512-R6PH4vSzF2Yxjdvb2p2FA06yWul+U0PDDav4b/od/oXf9Iw37zl10plvwOXelrjV2Ai7Eo3vyHeyFUjhXdBCVQ=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/mode/python/python.min.js"
+    integrity="sha512-2M0GdbU5OxkGYMhakED69bw0c1pW3Nb0PeF3+9d+SnwN1ryPx3wiDdNqK3gSM7KAU/pEV+2tFJFbMKjKAahOkQ=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js"
+    integrity="sha512-AA1Bzp5Q0K1KanKKmvN/4d3IRKVlv9PYgwFPvm32nPO6QS8yH1HO7LbgB1pgiOxPtfeg5zEn2ba64MUcqJx6CA=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://unpkg.com/xfetch-js@0.5.0/dist/xfetch.min.js"></script>
+<script>
+    const initCheckerForm = () => {
+        const checkerForm = document.querySelector('#checker-form')
+        const editor = CodeMirror.fromTextArea(checkerForm.checker, {
+            lineNumbers: true,
+            theme: 'monokai',
+            mode: 'python'
+        });
+        checkerForm.onsubmit = e => {
+            e.preventDefault()
+            xf.post('/api/checker', {
+                json: {
+                    'checker': editor.getValue()
+                }
+            }).json(r => {
+                swal({
+                    title: r.message,
+                    icon: 'success'
+                })
+            })
+        }
+        xf.get('/api/checker').json(r => {
+            editor.setValue(r.checker)
+        })
+    }
+    const initAttackForm = () => {
+        const attackForm = document.querySelector('#attack-form')
+        const editor = CodeMirror.fromTextArea(attackForm.code, {
+            lineNumbers: true,
+            theme: 'monokai',
+            mode: 'python'
+        })
+        attackForm.onsubmit = e => {
+            e.preventDefault()
+            xf.post(`/api/attack/${attackForm.target.value}`, {
+                json: {
+                    'code': editor.getValue()
+                }
+            }).json(r => {
+                if (r.status === 'ok') {
+                    swal({
+                        title: 'Execution Result',
+                        text: `Stdout: ${r.stdout}\nStderr: ${r.stderr}`,
+                        icon: r.get_flag ? 'success' : 'info'
+                    })
+                }
+                else {
+                    swal({
+                        title: r.message,
+                        icon: 'error'
+                    })
+                }
+            })
+        }
+        editor.setValue('print(open("flag.txt").read())\n')
+    }
+    window.onload = () => {
+        initCheckerForm()
+        initAttackForm()
+    }
+</script>
+{% endblock %}
