@@ -5,6 +5,7 @@ import random
 from uuid import uuid4
 from .models import db, Team
 from . import sandbox
+from .worker.api import connect_api
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
@@ -13,6 +14,11 @@ app.secret_key = secrets.token_bytes(16).hex()
 db.init_app(app)
 with app.app_context():
     db.create_all()
+    for t in connect_api().teams_get():
+        if Team.query.filter_by(id=t["id"]).first() is None:
+            team = Team(id=t["id"], name=t["name"])
+            db.session.add(team)
+    db.session.commit()
 
 
 @app.get("/")
@@ -87,14 +93,14 @@ def teams():
 def attack(target):
     code = request.json["code"]
     if not isinstance(code, str):
-        return jsonify({"status": "error", "message": "code must be a string"})
+        return jsonify({"status": "error", "message": "Code must be a string"})
     target_team = Team.query.filter_by(id=target).first()
     if target_team is None:
-        return jsonify({"status": "error", "message": "target not found"})
+        return jsonify({"status": "error", "message": "Target not found"})
     team = Team.query.filter_by(id=session["team_id"]).first()
     if not sandbox.check(target_team.checker, code):
         return jsonify(
-            {"status": "error", "message": "failed to pass target's checker"}
+            {"status": "error", "message": "Failed to pass target's checker"}
         )
     flag = f"FLAG{{{uuid4()}}}"
     result = sandbox.run(
