@@ -8,12 +8,13 @@ import logging
 logging.root.setLevel(logging.INFO)
 
 
-def poll_jobs(api: WorkerApi, jobtype, interval=1):
+def poll_jobs(api: WorkerApi, team_ids, *jobtypes, interval=1):
     while True:
-        jobs = api.job_take(jobtype, team_ids)
-        for j in jobs:
-            yield j
-        time.sleep(interval)
+        for jt in jobtypes:
+            jobs = api.job_take(jt, team_ids)
+            for j in jobs:
+                yield j
+            time.sleep(interval)
 
 
 def handle_flag_update(api: WorkerApi, job):
@@ -35,7 +36,7 @@ def handle_flag_update(api: WorkerApi, job):
 
 with connect_worker_api("flag") as api:
     team_ids = [t["id"] for t in api.teams_get()]
-    for job in poll_jobs(api, "FlagUpdate"):
+    for job in poll_jobs(api, team_ids, "FlagUpdate"):
         logging.info("Received job: %s", job["id"])
         logging.debug("Job: %s", job)
         try:
