@@ -15,7 +15,7 @@ class Result:
     oom_killed: bool
 
 
-DEFAULT_LIMITS = {"cputime": 1, "memory": 64}
+DEFAULT_LIMITS = {"cputime": 1, "memory": 16}
 
 
 def run(code: str, files=[], limits=DEFAULT_LIMITS, **kwargs) -> Result:
