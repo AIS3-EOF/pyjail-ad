@@ -15,6 +15,7 @@
 		<button type="submit">Update</button>
 	</form>
 	<h2>Attack</h2>
+	<span>Try you best to read target's <code>flag.txt</code>!</span>
 	<form id="attack-form">
 		<p>
 			<label>Target</label>
@@ -158,7 +159,20 @@
 				}
 			})
 		}
-		editor.setValue('print("Hello World")\n')
+		const DEFAULT_CODE = 'print("Hello World")\n'
+		editor.setValue(DEFAULT_CODE)
+		const updateCodeFromStorage = () => {
+			const teamKey = attackForm.target.value
+			const code = localStorage.getItem(`attack-code-${teamKey}`)
+			editor.setValue(code || DEFAULT_CODE)
+		}
+		const saveCodeToStorage = () => {
+			const teamKey = attackForm.target.value
+			localStorage.setItem(`attack-code-${teamKey}`, editor.getValue())
+		}
+		editor.on('change', saveCodeToStorage)
+		attackForm.target.onchange = updateCodeFromStorage
+		updateCodeFromStorage()
 	}
 	window.onload = () => {
 		initJailForm()
