@@ -4,6 +4,7 @@ from .worker.api import connect_worker_api, WorkerApi
 from tempfile import TemporaryFile
 from . import sandbox
 from pathlib import Path
+from multiprocessing import Pool
 import json
 import time
 import logging
@@ -68,6 +69,7 @@ def handle_patch(api: WorkerApi, job):
         return
     api.job_result(job["id"], "Success")
 
+pool = Pool(4)
 
 with connect_worker_api("patch") as api:
     team_ids = [t["id"] for t in api.teams_get()]
@@ -76,7 +78,7 @@ with connect_worker_api("patch") as api:
         logging.debug("Job: %s", job)
         try:
             if job["jobtype"] == "CheckPatch":
-                handle_check_patch(api, job)
+                pool.apply_async(handle_check_patch, (api, job))
             elif job["jobtype"] == "Patch":
                 handle_patch(api, job)
         except Exception as e:
