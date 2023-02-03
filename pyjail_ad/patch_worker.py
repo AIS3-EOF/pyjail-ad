@@ -11,7 +11,9 @@ import logging
 
 PATCH_CHECK = []
 for f in (Path(__file__).parent / "patch_check").iterdir():
-    PATCH_CHECK.append((f.name, f.read_text()))
+    code = f.read_text()
+    r = sandbox.run(code)
+    PATCH_CHECK.append((f.name, code, r.exit_code, r.stdout, r.stderr))
 
 logging.root.setLevel(logging.INFO)
 
@@ -38,9 +40,14 @@ def handle_check_patch(api: WorkerApi, job):
     feedback = ""
     try:
         p = patch.decode()
-        for name, code in PATCH_CHECK:
-            if not sandbox.check(p, code):
-                feedback = f"Your patch wrongly rejected the patch checking code.\nFilename: {name}"
+        for name, code, exit_code, stdout, stderr in PATCH_CHECK:
+            allow, new_code = sandbox.apply_jail(p, code)
+            if not allow:
+                feedback = f"Your jail wrongly rejected the patch checking code.\nFilename: {name}"
+                break
+            r = sandbox.run(new_code)
+            if r.exit_code != exit_code or r.stdout != stdout or r.stderr != stderr:
+                feedback = f"Your jail changed the output of patch checking code.\nFilename: {name}"
                 break
     except UnicodeDecodeError:
         feedback = "Yout patch is not a valid UTF-8 string."
@@ -60,14 +67,15 @@ def handle_patch(api: WorkerApi, job):
     try:
         with app.app_context():
             team = Team.query.filter_by(id=team_id).first()
-            team.checker = patch
+            team.jail = patch
             db.session.commit()
-        logging.info("Team %d's checker has been updated.", team_id)
+        logging.info("Team %d's jail has been updated.", team_id)
     except Exception as e:
-        logging.error("Update team %d's checker failed: %s", team_id, e)
+        logging.error("Failed updating team %d's jail failed: %s", team_id, e)
         api.job_result(job["id"], "Failed", e)
         return
     api.job_result(job["id"], "Success")
+
 
 pool = Pool(4)
 

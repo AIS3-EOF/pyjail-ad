@@ -6,11 +6,11 @@
 		<li>Team name: {{ team.name }}</li>
 		<li>Score: {{ team.score }}</li>
 	</ul>
-	<h2>Update checker</h2>
-	<form id="checker-form">
+	<h2>Update jail</h2>
+	<form id="jail-form">
 		<p>
-			<label>Checker (Currently Active)</label>
-			<textarea name="checker"></textarea>
+			<label>Jail (Currently Active)</label>
+			<textarea name="jail"></textarea>
 		</p>
 		<button type="submit">Update</button>
 	</form>
@@ -80,10 +80,11 @@
 			mode: 'python',
 			indentUnit: 4
 		})
-	const initCheckerForm = () => {
-		const checkerForm = document.querySelector('#checker-form')
-		const editor = initCodeMirror(checkerForm.checker)
-		checkerForm.onsubmit = async e => {
+	const initJailForm = () => {
+		const jailForm = document.querySelector('#jail-form')
+		const editor = initCodeMirror(jailForm.jail)
+		editor.setSize(null, 500)
+		jailForm.onsubmit = async e => {
 			e.preventDefault()
 			const patch = editor.getValue()
 			const resp = await api
@@ -117,7 +118,7 @@
 				if (result.status === 'CheckFailed') {
 					swal({
 						title: 'Patch failed',
-						text: `The patch failed to pass the check, reason: ${result.checker_feedback}`,
+						text: `The patch failed to pass the check, reason: ${result.jail_feedback}`,
 						icon: 'error'
 					})
 				} else {
@@ -129,8 +130,8 @@
 				}
 			}
 		}
-		xf.get('/api/checker').json(r => {
-			editor.setValue(r.checker)
+		xf.get('/api/jail').json(r => {
+			editor.setValue(r.jail)
 		})
 	}
 	const initAttackForm = () => {
@@ -160,7 +161,7 @@
 		editor.setValue('print("Hello World")\n')
 	}
 	window.onload = () => {
-		initCheckerForm()
+		initJailForm()
 		initAttackForm()
 	}
 </script>

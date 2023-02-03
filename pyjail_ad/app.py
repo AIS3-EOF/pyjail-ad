@@ -92,11 +92,11 @@ def panel():
     )
 
 
-@app.get("/api/checker")
+@app.get("/api/jail")
 @login_required
-def get_checker():
+def get_jail():
     team = Team.query.filter_by(id=session["team_id"]).first()
-    return jsonify({"status": "ok", "checker": team.checker})
+    return jsonify({"status": "ok", "jail": team.jail})
 
 
 @app.get("/api/teams")
@@ -117,12 +117,11 @@ def attack(target):
     if target_team is None:
         return jsonify({"status": "error", "message": "Target not found"})
     team = Team.query.filter_by(id=session["team_id"]).first()
-    if not sandbox.check(target_team.checker, code):
-        return jsonify(
-            {"status": "error", "message": "Failed to pass target's checker"}
-        )
+    allow, new_code = sandbox.apply_jail(target_team.jail, code)
+    if not allow:
+        return jsonify({"status": "error", "message": "Failed to pass target's jail"})
     result = sandbox.run(
-        code,
+        new_code,
         files=[
             {
                 "name": "flag.txt",
