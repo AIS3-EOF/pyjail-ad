@@ -93,32 +93,40 @@
 					}
 				})
 				.json()
-			swal({
-				title: 'Patch sent',
-				text: `The patch has been sent to the server for checking, please wait patiently for the result.`,
-				icon: 'info'
-			})
-			const result = await (async ()=>{
-				while(true){
-					await sleep(1000)
-					const r = await api.get(`/patch/${resp.id}`).json()
-					if(r.status!=='Pending') return r
-				}
-			})()
-			console.log(result)
-			if(result.status==='CheckFailed'){
+				.catch(err => err.response.json())
+			if (resp.message) {
 				swal({
-					title: 'Patch failed',
-					text: `The patch failed to pass the check, reason: ${result.checker_feedback}`,
+					title: 'Error',
+					text: resp.message,
 					icon: 'error'
 				})
-			}
-			else{
+			} else {
 				swal({
-					title: 'Patch passed',
-					text: `The patch will be applied when next round starts.\nYou are free to apply other patches but only the last one will be used.`,
-					icon: 'success'
+					title: 'Patch sent',
+					text: `The patch has been sent to the server for checking, please wait patiently for the result.`,
+					icon: 'info'
 				})
+				const result = await (async () => {
+					while (true) {
+						await sleep(1000)
+						const r = await api.get(`/patch/${resp.id}`).json()
+						if (r.status !== 'Pending') return r
+					}
+				})()
+				console.log(result)
+				if (result.status === 'CheckFailed') {
+					swal({
+						title: 'Patch failed',
+						text: `The patch failed to pass the check, reason: ${result.checker_feedback}`,
+						icon: 'error'
+					})
+				} else {
+					swal({
+						title: 'Patch passed',
+						text: `The patch will be applied when next round starts.\nYou are free to apply other patches but only the last one will be used.`,
+						icon: 'success'
+					})
+				}
 			}
 		}
 		xf.get('/api/checker').json(r => {
