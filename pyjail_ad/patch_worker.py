@@ -2,9 +2,15 @@ from .models import db, Team
 from .app import app
 from .worker.api import connect_worker_api, WorkerApi
 from tempfile import TemporaryFile
+from . import sandbox
+from pathlib import Path
 import json
 import time
 import logging
+
+PATCH_CHECK = []
+for f in (Path(__file__).parent / "patch_check").iterdir():
+    PATCH_CHECK.append((f.name, f.read_text()))
 
 logging.root.setLevel(logging.INFO)
 
@@ -28,16 +34,20 @@ def receive_patch(api: WorkerApi, patch_id) -> bytes:
 def handle_check_patch(api: WorkerApi, job):
     jobobj = json.loads(job["jobpayload"])
     patch = receive_patch(api, jobobj["patch"])
-    success = True
+    feedback = ""
     try:
-        patch.decode()
+        p = patch.decode()
+        for name, code in PATCH_CHECK:
+            if not sandbox.check(p, code):
+                feedback = f"Your patch wrongly rejected the patch checking code.\nFilename: {name}"
+                break
     except UnicodeDecodeError:
-        success = False
-    if success:
+        feedback = "Yout patch is not a valid UTF-8 string."
+    if not feedback:
         api.job_result(job["id"], "Success", json.dumps({"feedback": "", "msg": ""}))
     else:
         api.job_result(
-            job["id"], "Failed", json.dumps({"feedback": "Invalid UTF-8", "msg": ""})
+            job["id"], "Failed", json.dumps({"feedback": feedback, "msg": ""})
         )
 
 
