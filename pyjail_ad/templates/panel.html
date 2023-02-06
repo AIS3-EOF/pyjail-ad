@@ -14,6 +14,10 @@
 		</p>
 		<button type="submit">Update</button>
 	</form>
+	<details>
+		<summary>Existing patches</summary>
+		<div id="patches-list"></div>
+	</details>
 	<h2>Attack</h2>
 	<span>Try you best to read target's <code>flag.txt</code>!</span>
 	<form id="attack-form">
@@ -31,6 +35,22 @@
 		</p>
 		<button type="submit">Attack</button>
 	</form>
+
+	<template id="patch-tmpl">
+		<section>
+			<h4>
+				Patch <span class="patch-id"></span>
+				<a class="download" href="#" title="download" style="text-decoration: none;">⬇</a>
+			</h4>
+			<span>
+			<ul>
+				<li>Status: <span class="patch-status"></span></li>
+				<li>Active Round: <span class="patch-active-round"></span></li>
+				<li>Public: <span class="patch-public"></span></li>
+				<li>Feedback: <pre class="patch-feedback"></pre></li>
+			</ul>
+		</section>
+	</template>
 </main>
 <script
 	src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.js"
@@ -115,7 +135,7 @@
 						if (r.status !== 'Pending') return r
 					}
 				})()
-				console.log(result)
+				console.log('Patch result', result)
 				if (result.status === 'CheckFailed') {
 					swal({
 						title: 'Patch failed',
@@ -174,9 +194,40 @@
 		attackForm.target.onchange = updateCodeFromStorage
 		updateCodeFromStorage()
 	}
+	function download(content, mimeType, filename) {
+		const a = document.createElement('a')
+		const blob = new Blob([content], { type: mimeType })
+		const url = URL.createObjectURL(blob)
+		a.setAttribute('href', url)
+		a.setAttribute('download', filename)
+		a.click()
+		URL.revokeObjectURL(url)
+	}
+	const initShowPatches = async () => {
+		const patchesList = document.querySelector('#patches-list')
+		patchesList.innerHTML = ''
+		const tmpl = document.querySelector('#patch-tmpl')
+		const patches = await api.get('/patch/').json()
+		console.log('Patches', patches)
+		for (const patch of patches) {
+			const patchEl = tmpl.content.cloneNode(true)
+			patchEl.querySelector('.patch-id').textContent = patch.id
+			patchEl.querySelector('.patch-status').textContent = patch.status
+			patchEl.querySelector('.patch-active-round').textContent = patch.active_round ?? 'Never'
+			patchEl.querySelector('.patch-public').textContent = patch.public
+			patchEl.querySelector('.patch-feedback').textContent = patch.checker_feedback || 'None'
+			patchEl.querySelector('.download').onclick = async e => {
+				e.preventDefault()
+				const text = await api.get(`/patch/${patch.id}/file`).text()
+				download(text, 'text/plain', `patch-${patch.id}.py`)
+			}
+			patchesList.appendChild(patchEl)
+		}
+	}
 	window.onload = () => {
 		initJailForm()
 		initAttackForm()
+		initShowPatches()
 	}
 </script>
 {% endblock %}

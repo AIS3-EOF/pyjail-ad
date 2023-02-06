@@ -5,6 +5,7 @@ services:
       - '5000:5000'
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - .:/app
     environment:
       - API_SERVER=http://localhost:8088
       - API_TOKEN=0635491c2d34484b992af4450797eebf
