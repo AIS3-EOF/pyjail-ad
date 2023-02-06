@@ -18,14 +18,14 @@ from .worker.api import connect_api, CHALLENGE_ID
 import os
 import requests
 
-API_HOST = os.environ.get("API_HOST", "http://localhost:8088")
+API_SERVER = os.environ.get("API_SERVER", "http://localhost:8088")
 api_info = {
-    "api_server": API_HOST,
+    "api_server": API_SERVER,
     "challenge_id": CHALLENGE_ID,
 }
 
 app = Flask(__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:////tmp/pyjail.db"
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DB_CONN", "sqlite:////tmp/pyjail.db")
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 app.secret_key = secrets.token_bytes(16).hex()
 db.init_app(app)
@@ -47,7 +47,7 @@ def index():
 def login():
     token = request.form["token"]
     team_info = requests.get(
-        f"{API_HOST}/team/my", headers={"Authorization": token}
+        f"{API_SERVER}/team/my", headers={"Authorization": token}
     ).json()
     if "id" not in team_info:
         flash("Login failed")

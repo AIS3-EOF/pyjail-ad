@@ -2,11 +2,11 @@ import requests
 from urllib.parse import urljoin
 import logging
 import datetime
+import os
 
-
-API_SERVER = "http://localhost:8088"
-API_TOKEN = "0635491c2d34484b992af4450797eebf"
-CHALLENGE_ID = 2
+API_SERVER = os.environ.get("API_SERVER", "http://localhost:8088")
+API_TOKEN = os.environ.get("API_TOKEN", "0635491c2d34484b992af4450797eebf")
+CHALLENGE_ID = int(os.environ.get("CHALLENGE_ID", "2"))
 
 
 class Api:
