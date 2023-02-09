@@ -139,7 +139,7 @@
 				if (result.status === 'CheckFailed') {
 					swal({
 						title: 'Patch failed',
-						text: `The patch failed to pass the check, reason: ${result.jail_feedback}`,
+						text: `The patch failed to pass the check, reason: ${result.checker_feedback}`,
 						icon: 'error'
 					})
 				} else {

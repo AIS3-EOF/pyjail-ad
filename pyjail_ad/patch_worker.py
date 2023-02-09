@@ -8,6 +8,16 @@ from multiprocessing import Pool
 import json
 import time
 import logging
+import signal
+import os
+
+
+def handle_interrupt(*args, **kwargs):
+    exit()
+
+
+signal.signal(signal.SIGINT, handle_interrupt)
+signal.signal(signal.SIGTERM, handle_interrupt)
 
 PATCH_CHECK = []
 for f in (Path(__file__).parent / "patch_check").iterdir():
@@ -15,6 +25,9 @@ for f in (Path(__file__).parent / "patch_check").iterdir():
     r = sandbox.run(code)
     PATCH_CHECK.append((f.name, code, r.exit_code, r.stdout, r.stderr))
 
+logging.basicConfig(
+    format="patch %(asctime)s - %(message)s", datefmt="%d-%b-%y %H:%M:%S"
+)
 logging.root.setLevel(logging.INFO)
 
 

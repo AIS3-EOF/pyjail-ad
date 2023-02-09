@@ -19,8 +19,9 @@ import os
 import requests
 
 API_SERVER = os.environ.get("API_SERVER", "http://localhost:8088")
+PUBLIC_API_SERVER = os.environ.get("PUBLIC_API_SERVER", "http://localhost:8088")
 api_info = {
-    "api_server": API_SERVER,
+    "api_server": PUBLIC_API_SERVER,
     "challenge_id": CHALLENGE_ID,
 }
 

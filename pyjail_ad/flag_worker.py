@@ -4,7 +4,20 @@ from .worker.api import connect_worker_api, WorkerApi
 import json
 import time
 import logging
+import signal
+import os
 
+
+def handle_interrupt(*args, **kwargs):
+    exit()
+
+
+signal.signal(signal.SIGINT, handle_interrupt)
+signal.signal(signal.SIGTERM, handle_interrupt)
+
+logging.basicConfig(
+    format="flag %(asctime)s - %(message)s", datefmt="%d-%b-%y %H:%M:%S"
+)
 logging.root.setLevel(logging.INFO)
 
 
@@ -43,3 +56,6 @@ with connect_worker_api("flag") as api:
             handle_flag_update(api, job)
         except Exception as e:
             logging.warning("Failed to handle flag update. %s", e)
+            import traceback
+
+            traceback.print_exc()
