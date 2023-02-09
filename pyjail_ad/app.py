@@ -12,7 +12,7 @@ from functools import wraps
 import secrets
 import random
 from uuid import uuid4
-from .models import db, Team
+from .models import db, Team, AttackLog
 from . import sandbox
 from .worker.api import connect_api, CHALLENGE_ID
 import os
@@ -106,6 +106,11 @@ def teams():
         [{"id": team.id, "name": team.name, "score": team.score} for team in teams]
     )
 
+def try_decode(b: bytes):
+    try:
+        return b.decode()
+    except UnicodeDecodeError:
+        return f"UnicodeDecodeError: {b!r}"
 
 @app.post("/api/attack/<target>")
 @login_required
@@ -132,7 +137,18 @@ def attack(target):
     resp = {
         "status": "ok",
         "exit_code": result.exit_code,
-        "stdout": result.stdout.decode(),
-        "stderr": result.stderr.decode(),
+        "stdout": try_decode(result.stdout),
+        "stderr": try_decode(result.stderr),
     }
+    atk_log = AttackLog(
+        team_id=team.id,
+        target_id=target_team.id,
+        jail=target_team.jail,
+        code=code,
+        new_code=new_code,
+        stdout=try_decode(result.stdout),
+        stderr=try_decode(result.stderr),
+    )
+    db.session.add(atk_log)
+    db.session.commit()
     return jsonify(resp)
