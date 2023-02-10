@@ -7,6 +7,7 @@ from flask import (
     session,
     jsonify,
     flash,
+    send_from_directory
 )
 from functools import wraps
 import secrets
@@ -153,3 +154,11 @@ def attack(target):
     db.session.add(atk_log)
     db.session.commit()
     return jsonify(resp)
+
+@app.get('/help')
+def helppage():
+    return render_template('help.html')
+
+@app.get('/patch_check_example')
+def patch_check_example():
+    return send_from_directory('patch_check', 'random_math.py')

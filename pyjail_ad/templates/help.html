@@ -1,0 +1,41 @@
+{% extends 'base.html' %} {% block title %}Panel{% endblock %} {% block content %}
+<main>
+    <section>
+        <h3>規則</h3>
+        <ol>
+            <li>請勿攻擊此網頁</li>
+            <li>請問實行任何 DoS 類型的攻擊</li>
+        </ol>
+    </section>
+    <section>
+        <h3>介紹</h3>
+        <p>
+            在此題目中，你的目標是偷到其他隊伍的 flag (in <code>flag.txt</code>) 並寫一個 <code>jail</code> 函數過濾/修改其他隊伍的的攻擊程式碼。
+        </p>
+    </section>
+    <section>
+        <h3>關於 patching</h3>
+        <p>
+            這題的 <b>patch</b> 是一些定義了一個 <code>jail</code> 函數的 <b>Python 程式碼</b>。它會接受一個 <code>str</code> 參數並回傳 <code>Tuple[bool, str]</code>。<br>
+            第一個值是個 boolean 代表攻擊的程式碼是否應該被執行，而第二個值是修改過的攻擊的程式碼。<br>
+            若第一個值為 <code>False</code> 則第二個值會被忽略，反之第二個值則會當作在沙盒中和 <code>flag.txt</code> 一起執行。<br>
+            因此一個毫無作用的 <code>jail</code> 為 <code>def jail(code): return True, code</code>。
+        </p>
+    </section>
+    <section>
+        <h3>Patching 規則</h3>
+        <p>
+            送出 patch 之後後台會有一系列的正常 Python 範例程式，而你的 <code>jail</code> 函數必須要能<b>接受這些程式碼</b>並<b>不改變其執行結果</b>。<br>
+            那些範例程式大部分是<b>不公開的</b>，不過這邊有一個範例可以作為參考: <a href="/patch_check_example">random_math.py</a><br>
+            那些範例程式保證不會嘗試去開啟外部檔案 (e.g. <code>print(open('flag.txt').read())</code>)，也不會執行任何系統指令 (e.g. <code>import os; os.system('ls')</code>)，所以可以放心阻擋這些行為。
+        </p>
+    </section>
+    <section>
+        <h3>關於沙盒</h3>
+        <p>
+            一件很重要的事是你的 <code>jail</code> 函數與攻擊的程式碼都會在完全分離的沙盒中執行，所以你沒有必要也請勿嘗試逃脫沙盒。<br>
+            沙盒是沒有網路的，所以不要想在 <code>jail</code> 中把攻擊者的程式碼傳到自己的伺服器上。
+        </p>
+    </section>
+</main>
+{% endblock %}
