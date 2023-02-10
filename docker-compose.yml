@@ -6,18 +6,18 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - .:/app
-      - ../pyjail_db/:/pyjail_db
+      - ../storage/:/storage
     environment:
       # - API_SERVER=http://localhost:8088
       # - API_TOKEN=0635491c2d34484b992af4450797eebf
       # - CHALLENGE_ID=2
 
       - API_SERVER=http://10.6.0.1:8888
-      - PUBLIC_API_SERVER=http://localhost:8888
+      - PUBLIC_API_SERVER=http://10.6.0.1:8888
       - API_TOKEN=7b4cae87d261490385fa49a6b8987345
       - CHALLENGE_ID=3
 
-      - DB_CONN=sqlite:////pyjail_db/pyjail.db
+      - DB_CONN=sqlite:////storage/pyjail.db
       # - DB_CONN=postgresql://pyjail:pekomiko@db/pyjail
     # network_mode: host
     stop_grace_period: 5s
