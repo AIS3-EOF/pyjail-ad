@@ -25,7 +25,7 @@ signal.signal(signal.SIGTERM, handle_interrupt)
 def poll_jobs(api: WorkerApi, team_ids, *jobtypes, interval=1):
     while True:
         for jt in jobtypes:
-            jobs = api.job_take(jt, team_ids)
+            jobs = api.job_take_retry(jt, team_ids)
             for j in jobs:
                 yield j
             time.sleep(interval)

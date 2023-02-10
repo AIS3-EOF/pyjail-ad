@@ -130,6 +130,13 @@ class WorkerApi:
             # self.logger.warning("Call api /job/take failed. StatusCode: %d, Response: %s", rescode, resobj)
             return {}
 
+    def job_take_retry(self, *args, **kwargs):
+        while True:
+            try:
+                return self.job_take(*args, **kwargs)
+            except requests.exceptions.RequestException:
+                self.logger.warning("Call api /job/take failed. Retrying...")
+
     def job_result(self, jobid, status, detail="", runat=None):
         if runat is None:
             runat = datetime.datetime.now(datetime.timezone.utc).isoformat()
