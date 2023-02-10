@@ -1,3 +1,9 @@
+import logging
+
+logging.basicConfig()
+logger = logging.getLogger("patch_worker")
+logger.setLevel(logging.INFO)
+
 from .models import db, Team
 from .app import app
 from .worker.api import connect_worker_api, WorkerApi
@@ -7,10 +13,8 @@ from pathlib import Path
 from multiprocessing import Pool
 import json
 import time
-import logging
 import signal
 import os
-
 
 def handle_interrupt(*args, **kwargs):
     exit()
@@ -19,17 +23,12 @@ def handle_interrupt(*args, **kwargs):
 signal.signal(signal.SIGINT, handle_interrupt)
 signal.signal(signal.SIGTERM, handle_interrupt)
 
+
 PATCH_CHECK = []
 for f in (Path(__file__).parent / "patch_check").iterdir():
     code = f.read_text()
     r = sandbox.run(code)
     PATCH_CHECK.append((f.name, code, r.exit_code, r.stdout, r.stderr))
-
-logging.basicConfig(
-    format="patch %(asctime)s - %(message)s", datefmt="%d-%b-%y %H:%M:%S"
-)
-logging.root.setLevel(logging.INFO)
-
 
 def poll_jobs(api: WorkerApi, team_ids, *jobtypes, interval=1):
     while True:
@@ -82,9 +81,9 @@ def handle_patch(api: WorkerApi, job):
             team = Team.query.filter_by(id=team_id).first()
             team.jail = patch
             db.session.commit()
-        logging.info("Team %d's jail has been updated.", team_id)
+        logger.info("Team %d's jail has been updated.", team_id)
     except Exception as e:
-        logging.error("Failed updating team %d's jail failed: %s", team_id, e)
+        logger.error("Failed updating team %d's jail failed: %s", team_id, e)
         api.job_result(job["id"], "Failed", e)
         return
     api.job_result(job["id"], "Success")
@@ -92,18 +91,18 @@ def handle_patch(api: WorkerApi, job):
 
 pool = Pool(4)
 
-with connect_worker_api("patch") as api:
+with connect_worker_api("patch", logger=logger) as api:
     team_ids = [t["id"] for t in api.teams_get()]
     for job in poll_jobs(api, team_ids, "CheckPatch", "Patch"):
-        logging.info("Received job: %s %s", job["id"], job["jobtype"])
-        logging.debug("Job: %s", job)
+        logger.info("Received job: %s %s", job["id"], job["jobtype"])
+        logger.debug("Job: %s", job)
         try:
             if job["jobtype"] == "CheckPatch":
                 pool.apply_async(handle_check_patch, (api, job))
             elif job["jobtype"] == "Patch":
                 handle_patch(api, job)
         except Exception as e:
-            logging.warning("Failed to handle patch update. %s", e)
+            logger.warning("Failed to handle patch update. %s", e)
             import traceback
 
             traceback.print_exc()

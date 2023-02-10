@@ -32,7 +32,7 @@ app.secret_key = secrets.token_bytes(16).hex()
 db.init_app(app)
 with app.app_context():
     db.create_all()
-    for t in connect_api().teams_get():
+    for t in connect_api(logger=app.logger).teams_get():
         if Team.query.filter_by(id=t["id"]).first() is None:
             team = Team(id=t["id"], name=t["name"])
             db.session.add(team)

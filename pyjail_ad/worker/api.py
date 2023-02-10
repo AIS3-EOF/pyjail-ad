@@ -4,16 +4,20 @@ import logging
 import datetime
 import os
 
+logger = logging.getLogger("api")
+logger.setLevel(logging.INFO)
+
 API_SERVER = os.environ.get("API_SERVER", "http://localhost:8088")
 API_TOKEN = os.environ.get("API_TOKEN", "0635491c2d34484b992af4450797eebf")
 CHALLENGE_ID = int(os.environ.get("CHALLENGE_ID", "2"))
 
 
 class Api:
-    def __init__(self, api_server, api_token):
+    def __init__(self, api_server, api_token, logger=logger):
         self.api_server = api_server
         self.api_token = api_token
-        logging.info("Api initialized.")
+        self.logger = logger
+        self.logger.info("Api initialized.")
 
     def request(self, method, path, **kwargs):
         url = urljoin(self.api_server, path)
@@ -26,7 +30,7 @@ class Api:
         except:
             resobj = {}
         if res.status_code != 200:
-            logging.warning(
+            self.logger.warning(
                 "%s %s doesn't get code 200. Code: %d, Response: %s",
                 method,
                 path,
@@ -41,18 +45,19 @@ class Api:
 
 
 class WorkerApi:
-    def __init__(self, api_server, api_token, worker_name):
+    def __init__(self, api_server, api_token, worker_name, logger=logger):
         self.api_server = api_server
         self.api_token = api_token
         self.worker_name = worker_name
         self.worker_token = None
+        self.logger = logger
         try:
             with open(f"{self.worker_name}.token") as f:
                 self.worker_token = f.read()
         except:
             if not self.worker_register():
                 return None
-        logging.info(
+        self.logger.info(
             "Worker initialized. Name: %s Token: %s",
             self.worker_name,
             self.worker_token,
@@ -69,7 +74,7 @@ class WorkerApi:
         except:
             resobj = {}
         if res.status_code != 200:
-            logging.warning(
+            self.logger.warning(
                 "%s %s doesn't get code 200. Code: %d, Response: %s",
                 method,
                 path,
@@ -84,7 +89,7 @@ class WorkerApi:
         )
         if rescode == 200:
             self.worker_token = resobj["token"]
-            logging.info(
+            self.logger.info(
                 "Worker register successful. Name: %s Token: %s",
                 self.worker_name,
                 self.worker_token,
@@ -93,18 +98,18 @@ class WorkerApi:
                 with open(f"{self.worker_name}.token", "w") as f:
                     f.write(self.worker_token)
             except:
-                logging.warning(
+                self.logger.warning(
                     "Couldn't save worker's token into file \"%s\". Please save it into the file manually.",
                     f"{self.worker_name}.token",
                 )
             return True
         else:
-            logging.error("Worker register failed.")
+            self.logger.error("Worker register failed.")
             return False
 
     def worker_deregister(self):
         rescode, resobj = self.request("DELETE", f"/worker/{self.worker_token}")
-        logging.info("Worker deregistered.")
+        self.logger.info("Worker deregistered.")
 
     def teams_get(self):
         rescode, resobj = self.request("GET", "/team")
@@ -122,7 +127,7 @@ class WorkerApi:
         if rescode == 200:
             return resobj
         else:
-            # logging.warning("Call api /job/take failed. StatusCode: %d, Response: %s", rescode, resobj)
+            # self.logger.warning("Call api /job/take failed. StatusCode: %d, Response: %s", rescode, resobj)
             return {}
 
     def job_result(self, jobid, status, detail="", runat=None):
@@ -152,7 +157,7 @@ class WorkerApi:
                     dstfile.write(chunk)
             return True
         except Exception as e:
-            logging.warning("Download patch %d's file failed. %s", patchid, e)
+            self.logger.warning("Download patch %d's file failed. %s", patchid, e)
         return False
 
     def __enter__(self):
@@ -162,13 +167,13 @@ class WorkerApi:
         self.worker_deregister()
 
 
-def connect_api() -> Api:
-    return Api(API_SERVER, API_TOKEN)
+def connect_api(**kwargs) -> Api:
+    return Api(API_SERVER, API_TOKEN, **kwargs)
 
 
-def connect_worker_api(name) -> WorkerApi:
+def connect_worker_api(name, **kwargs) -> WorkerApi:
     worker_name = f"pyjail_ad_{name}"
-    api = WorkerApi(API_SERVER, API_TOKEN, worker_name)
+    api = WorkerApi(API_SERVER, API_TOKEN, worker_name, **kwargs)
     if api is None:
         raise Exception("Couldn't initialize api.")
     return api
