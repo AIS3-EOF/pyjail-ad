@@ -19,23 +19,6 @@
 		<summary>Existing patches</summary>
 		<div id="patches-list"></div>
 	</details>
-	<h2>Attack</h2>
-	<span>Try you best to read target's <code>flag.txt</code>!</span>
-	<form id="attack-form">
-		<p>
-			<label>Target</label>
-			<select name="target" id="target">
-				{% for t in teams %}
-				<option value="{{ t.id }}">{{ t.name }}</option>
-				{% endfor %}
-			</select>
-		</p>
-		<p>
-			<label>Code</label>
-			<textarea name="code"></textarea>
-		</p>
-		<button type="submit">Attack</button>
-	</form>
 
 	<template id="patch-tmpl">
 		<section>
@@ -110,8 +93,13 @@
 		jailForm.onsubmit = async e => {
 			e.preventDefault()
 			const patch = editor.getValue()
-			const resp = await api
-				.post(`/patch/team/${api_info.id}/chal/${api_info.challenge_id}`, {
+			swal({
+				title: 'Submitting...',
+				text: 'Please wait',
+				icon: 'info',
+			})
+			const resp = await xf
+				.post(`/api/patch`, {
 					formData: {
 						file: new Blob([patch], { type: 'text/plain' })
 					}
@@ -125,29 +113,15 @@
 					icon: 'error'
 				})
 			} else {
-				swal({
-					title: 'Patch sent',
-					text: `The patch has been sent to the server for checking, please wait patiently for the result.`,
-					icon: 'info'
-				})
-				const result = await (async () => {
-					while (true) {
-						await sleep(1000)
-						const r = await api.get(`/patch/${resp.id}`).json()
-						if (r.status !== 'Pending') return r
-					}
-				})()
-				console.log('Patch result', result)
-				if (result.status === 'CheckFailed') {
+				if (!resp.success) {
 					swal({
 						title: 'Patch failed',
-						text: `The patch failed to pass the check, reason: ${result.checker_feedback}`,
+						text: `The patch failed to pass the check, reason: ${resp.feedback}`,
 						icon: 'error'
 					})
 				} else {
 					swal({
 						title: 'Patch passed',
-						text: `The patch will be applied when next round starts.\nYou are free to apply other patches but only the last one will be used.`,
 						icon: 'success'
 					})
 				}
@@ -229,7 +203,6 @@
 	}
 	window.onload = () => {
 		initJailForm()
-		initAttackForm()
 		initShowPatches()
 	}
 </script>

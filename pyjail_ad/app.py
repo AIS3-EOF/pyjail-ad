@@ -18,10 +18,6 @@ from . import sandbox
 from .worker.api import connect_api, CHALLENGE_ID
 import os
 import requests
-import socketio
-
-sio = socketio.Client()
-sio.connect(os.environ.get("ATTACK_SIO_SERVER", "http://localhost:8887"))
 
 API_SERVER = os.environ.get("API_SERVER", "http://localhost:8088")
 PUBLIC_API_SERVER = os.environ.get("PUBLIC_API_SERVER", "http://localhost:8088")
@@ -39,11 +35,11 @@ app.secret_key = secrets.token_bytes(16).hex()
 db.init_app(app)
 with app.app_context():
     db.create_all()
-    for t in connect_api(logger=app.logger).teams_get():
-        if Team.query.filter_by(id=t["id"]).first() is None:
-            team = Team(id=t["id"], name=t["name"])
-            db.session.add(team)
-    db.session.commit()
+#     for t in connect_api(logger=app.logger).teams_get():
+#         if Team.query.filter_by(id=t["id"]).first() is None:
+#             team = Team(id=t["id"], name=t["name"])
+#             db.session.add(team)
+#     db.session.commit()
 
 
 @app.get("/")
@@ -54,16 +50,16 @@ def index():
 @app.post("/login")
 def login():
     token = request.form["token"]
-    team_info = requests.get(
-        f"{API_SERVER}/team/my", headers={"Authorization": token}
-    ).json()
-    if "id" not in team_info:
-        flash("Login failed")
-        return redirect(url_for("index"))
-    team = Team.query.filter_by(id=team_info["id"]).first()
+    # team_info = requests.get(
+    #     f"{API_SERVER}/team/my", headers={"Authorization": token}
+    # ).json()
+    # if "id" not in team_info:
+    #     flash("Login failed")
+    #     return redirect(url_for("index"))
+    team = Team.query.filter_by(id=1).first()
     if team is None:
         # this really shouldn't happen
-        team = Team(id=team_info["id"], name=team_info["name"])
+        team = Team(id=1, name='DUMMY')
         db.session.add(team)
         db.session.commit()
     session["team_id"] = team.id
@@ -114,6 +110,43 @@ def teams():
         [{"id": team.id, "name": team.name, "score": team.score} for team in teams]
     )
 
+from pathlib import Path
+
+PATCH_CHECK = []
+for f in (Path(__file__).parent / "patch_check").iterdir():
+    code = f.read_text()
+    r = sandbox.run(code)
+    PATCH_CHECK.append((f.name, code, r.exit_code, r.stdout, r.stderr))
+
+def handle_check_patch(patch):
+    feedback = ""
+    try:
+        p = patch.decode()
+        res = sandbox.apply_jail_batch(p, [code for _, code, _, _, _ in PATCH_CHECK])
+        for (name, code, exit_code, stdout, stderr), (allow, new_code) in zip(
+            PATCH_CHECK, res
+        ):
+            if not allow:
+                feedback = f"Your jail wrongly rejected the patch checking code.\nFilename: {name}"
+                break
+            r = sandbox.run(new_code)
+            if r.exit_code != exit_code or r.stdout != stdout or r.stderr != stderr:
+                feedback = f"Your jail changed the output of patch checking code.\nFilename: {name}"
+                break
+    except UnicodeDecodeError:
+        feedback = "Yout patch is not a valid UTF-8 string."
+    if not feedback:
+        return {'success':True, 'feedback': feedback}
+    else:
+        return {'success':False, 'feedback': feedback}
+
+@app.post('/api/patch')
+def patch():
+    f = request.files.get('file')
+    patch = f.stream.read()
+    r = handle_check_patch(patch)
+    return jsonify(r)
+
 
 def try_decode(b: bytes):
     try:
@@ -122,47 +155,47 @@ def try_decode(b: bytes):
         return f"UnicodeDecodeError: {b!r}"
 
 
-@app.post("/api/attack/<target>")
-@login_required
-def attack(target):
-    code = request.json["code"]
-    if not isinstance(code, str):
-        return jsonify({"status": "error", "message": "Code must be a string"})
-    target_team = Team.query.filter_by(id=target).first()
-    if target_team is None:
-        return jsonify({"status": "error", "message": "Target not found"})
-    team = Team.query.filter_by(id=session["team_id"]).first()
-    sio.emit("traffic", [[team.id, target_team.id]])
-    allow, new_code = sandbox.apply_jail(target_team.jail, code)
-    if not allow:
-        return jsonify({"status": "error", "message": "Failed to pass target's jail"})
-    result = sandbox.run(
-        new_code,
-        files=[
-            {
-                "name": "flag.txt",
-                "content": target_team.flag.encode(),
-            }
-        ],
-    )
-    resp = {
-        "status": "ok",
-        "exit_code": result.exit_code,
-        "stdout": try_decode(result.stdout),
-        "stderr": try_decode(result.stderr),
-    }
-    atk_log = AttackLog(
-        team_id=team.id,
-        target_id=target_team.id,
-        jail=target_team.jail,
-        code=code,
-        new_code=new_code,
-        stdout=try_decode(result.stdout),
-        stderr=try_decode(result.stderr),
-    )
-    db.session.add(atk_log)
-    db.session.commit()
-    return jsonify(resp)
+# @app.post("/api/attack/<target>")
+# @login_required
+# def attack(target):
+#     code = request.json["code"]
+#     if not isinstance(code, str):
+#         return jsonify({"status": "error", "message": "Code must be a string"})
+#     target_team = Team.query.filter_by(id=target).first()
+#     if target_team is None:
+#         return jsonify({"status": "error", "message": "Target not found"})
+#     team = Team.query.filter_by(id=session["team_id"]).first()
+#     sio.emit("traffic", [[team.id, target_team.id]])
+#     allow, new_code = sandbox.apply_jail(target_team.jail, code)
+#     if not allow:
+#         return jsonify({"status": "error", "message": "Failed to pass target's jail"})
+#     result = sandbox.run(
+#         new_code,
+#         files=[
+#             {
+#                 "name": "flag.txt",
+#                 "content": target_team.flag.encode(),
+#             }
+#         ],
+#     )
+#     resp = {
+#         "status": "ok",
+#         "exit_code": result.exit_code,
+#         "stdout": try_decode(result.stdout),
+#         "stderr": try_decode(result.stderr),
+#     }
+#     atk_log = AttackLog(
+#         team_id=team.id,
+#         target_id=target_team.id,
+#         jail=target_team.jail,
+#         code=code,
+#         new_code=new_code,
+#         stdout=try_decode(result.stdout),
+#         stderr=try_decode(result.stderr),
+#     )
+#     db.session.add(atk_log)
+#     db.session.commit()
+#     return jsonify(resp)
 
 
 @app.get("/help")
