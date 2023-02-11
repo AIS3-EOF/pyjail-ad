@@ -14,6 +14,7 @@
 		</p>
 		<button type="submit">Update</button>
 	</form>
+	<p>You can manage your patches <a target="_blank" href="{{ api_info['api_server'] }}/dashboard/challenge/{{ api_info['challenge_id'] }}">here</a> too.</p>
 	<details>
 		<summary>Existing patches</summary>
 		<div id="patches-list"></div>
@@ -47,6 +48,7 @@
 				<li>Status: <span class="patch-status"></span></li>
 				<li>Active Round: <span class="patch-active-round"></span></li>
 				<li>Public: <span class="patch-public"></span></li>
+				<li>SHA-1: <span class="patch-hash"></span></li>
 				<li>Feedback: <pre class="patch-feedback"></pre></li>
 			</ul>
 		</section>
@@ -215,6 +217,7 @@
 			patchEl.querySelector('.patch-status').textContent = patch.status
 			patchEl.querySelector('.patch-active-round').textContent = patch.active_round ?? 'Never'
 			patchEl.querySelector('.patch-public').textContent = patch.public
+			patchEl.querySelector('.patch-hash').textContent = patch.hash
 			patchEl.querySelector('.patch-feedback').textContent = patch.checker_feedback || 'None'
 			patchEl.querySelector('.download').onclick = async e => {
 				e.preventDefault()

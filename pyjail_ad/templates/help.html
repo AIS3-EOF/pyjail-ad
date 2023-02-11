@@ -28,6 +28,7 @@
             送出 patch 之後後台會有一系列的正常 Python 範例程式，而你的 <code>jail</code> 函數必須要能<b>接受這些程式碼</b>並<b>不改變其執行結果</b>。<br>
             那些範例程式大部分是<b>不公開的</b>，不過這邊有一個範例可以作為參考: <a href="/patch_check_example">random_math.py</a><br>
             那些範例程式保證不會嘗試去開啟外部檔案 (e.g. <code>print(open('flag.txt').read())</code>)，也不會執行任何系統指令 (e.g. <code>import os; os.system('ls')</code>)，所以可以放心阻擋這些行為。
+            最後是<b>務必不要</b>在你的 <code>jail</code> 中輸出任何東西到 stdout，否則會影響到判斷結果，而出錯時的預設結果就是放行。
         </p>
     </section>
     <section>
