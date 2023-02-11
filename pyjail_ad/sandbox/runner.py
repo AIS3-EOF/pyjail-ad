@@ -2,7 +2,7 @@ import epicbox
 from dataclasses import dataclass
 
 
-epicbox.configure(profiles=[epicbox.Profile("python", "python:3.10-alpine")])
+epicbox.configure(profiles=[epicbox.Profile("python", "python:3.10-alpine", user="nobody")])
 
 
 @dataclass
