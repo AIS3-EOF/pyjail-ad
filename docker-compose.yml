@@ -14,6 +14,7 @@ services:
 
       - API_SERVER=http://10.6.0.1:8888
       - PUBLIC_API_SERVER=http://10.6.0.1:8888
+      - ATTACK_SIO_SERVER=http://10.140.0.4:8887
       - API_TOKEN=7b4cae87d261490385fa49a6b8987345
       - CHALLENGE_ID=3
 

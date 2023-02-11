@@ -13,6 +13,7 @@ epicbox = "^1.1.0"
 sqlalchemy = "^1.4.46"
 flask-sqlalchemy = "^3.0.2"
 gunicorn = {extras = ["gevent"], version = "^20.1.0"}
+python-socketio = "^5.7.2"
 
 
 [tool.poetry.group.dev.dependencies]

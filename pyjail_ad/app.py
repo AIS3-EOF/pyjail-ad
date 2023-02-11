@@ -7,7 +7,7 @@ from flask import (
     session,
     jsonify,
     flash,
-    send_from_directory
+    send_from_directory,
 )
 from functools import wraps
 import secrets
@@ -18,6 +18,10 @@ from . import sandbox
 from .worker.api import connect_api, CHALLENGE_ID
 import os
 import requests
+import socketio
+
+sio = socketio.Client()
+sio.connect(os.environ.get("ATTACK_SIO_SERVER", "http://localhost:8887"))
 
 API_SERVER = os.environ.get("API_SERVER", "http://localhost:8088")
 PUBLIC_API_SERVER = os.environ.get("PUBLIC_API_SERVER", "http://localhost:8088")
@@ -27,7 +31,9 @@ api_info = {
 }
 
 app = Flask(__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DB_CONN", "sqlite:////tmp/pyjail.db")
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
+    "DB_CONN", "sqlite:////tmp/pyjail.db"
+)
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 app.secret_key = secrets.token_bytes(16).hex()
 db.init_app(app)
@@ -108,11 +114,13 @@ def teams():
         [{"id": team.id, "name": team.name, "score": team.score} for team in teams]
     )
 
+
 def try_decode(b: bytes):
     try:
         return b.decode()
     except UnicodeDecodeError:
         return f"UnicodeDecodeError: {b!r}"
+
 
 @app.post("/api/attack/<target>")
 @login_required
@@ -124,6 +132,7 @@ def attack(target):
     if target_team is None:
         return jsonify({"status": "error", "message": "Target not found"})
     team = Team.query.filter_by(id=session["team_id"]).first()
+    sio.emit("traffic", [[team.id, target_team.id]])
     allow, new_code = sandbox.apply_jail(target_team.jail, code)
     if not allow:
         return jsonify({"status": "error", "message": "Failed to pass target's jail"})
@@ -155,10 +164,12 @@ def attack(target):
     db.session.commit()
     return jsonify(resp)
 
-@app.get('/help')
-def helppage():
-    return render_template('help.html')
 
-@app.get('/patch_check_example')
+@app.get("/help")
+def helppage():
+    return render_template("help.html")
+
+
+@app.get("/patch_check_example")
 def patch_check_example():
-    return send_from_directory('patch_check', 'random_math.py')
+    return send_from_directory("patch_check", "random_math.py")

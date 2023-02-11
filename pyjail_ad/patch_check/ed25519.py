@@ -139,4 +139,7 @@ if __name__ == "__main__":
     checkvalid(s, m, pk)
     print(m)
     print(s)
-    checkvalid(s, b"asd", pk)
+    try:
+        checkvalid(s, b"asd", pk)
+    except:
+        print('Good')

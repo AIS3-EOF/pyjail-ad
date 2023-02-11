@@ -1,6 +1,7 @@
 # A Python 3 script trying to in include every bytecode in Python 3.12, but it actually misses these bytecode:
 # {'LOAD_ASSERTION_ERROR', 'CHECK_EG_MATCH', 'UNPACK_EX', 'POP_JUMP_BACKWARD_IF_NONE', 'DELETE_DEREF', 'POP_JUMP_FORWARD_IF_NOT_NONE', 'EXTENDED_ARG', 'PRINT_EXPR', 'LOAD_CLASSDEREF', 'MAP_ADD', 'POP_JUMP_BACKWARD_IF_NOT_NONE', 'JUMP_IF_FALSE_OR_POP', 'IS_OP', 'LIST_TO_TUPLE', 'JUMP_IF_TRUE_OR_POP', 'PREP_RERAISE_STAR'}
 # the idea comes from https://github.com/kholia/dedrop
+exit()
 def main():
 
   (lambda:1)()

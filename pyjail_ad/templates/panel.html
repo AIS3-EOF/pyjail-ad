@@ -209,7 +209,7 @@
 		const patchesList = document.querySelector('#patches-list')
 		patchesList.innerHTML = ''
 		const tmpl = document.querySelector('#patch-tmpl')
-		const patches = await api.get('/patch/').json()
+		const patches = await api.get('/patch/team/{{ team.id }}/chal/{{ api_info.challenge_id }}').json()
 		console.log('Patches', patches)
 		for (const patch of patches) {
 			const patchEl = tmpl.content.cloneNode(true)
