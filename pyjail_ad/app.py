@@ -132,7 +132,7 @@ def attack(target):
         files=[
             {
                 "name": "flag.txt",
-                "content": team.flag.encode(),
+                "content": target_team.flag.encode(),
             }
         ],
     )
