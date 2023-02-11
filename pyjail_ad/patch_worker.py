@@ -16,6 +16,7 @@ import time
 import signal
 import os
 
+
 def handle_interrupt(*args, **kwargs):
     exit()
 
@@ -29,6 +30,7 @@ for f in (Path(__file__).parent / "patch_check").iterdir():
     code = f.read_text()
     r = sandbox.run(code)
     PATCH_CHECK.append((f.name, code, r.exit_code, r.stdout, r.stderr))
+
 
 def poll_jobs(api: WorkerApi, team_ids, *jobtypes, interval=1):
     while True:
@@ -52,8 +54,10 @@ def handle_check_patch(api: WorkerApi, job):
     feedback = ""
     try:
         p = patch.decode()
-        for name, code, exit_code, stdout, stderr in PATCH_CHECK:
-            allow, new_code = sandbox.apply_jail(p, code)
+        res = sandbox.apply_jail_batch(p, [code for _, code, _, _, _ in PATCH_CHECK])
+        for (name, code, exit_code, stdout, stderr), (allow, new_code) in zip(
+            PATCH_CHECK, res
+        ):
             if not allow:
                 feedback = f"Your jail wrongly rejected the patch checking code.\nFilename: {name}"
                 break
