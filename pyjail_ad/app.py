@@ -19,6 +19,7 @@ from .worker.api import connect_api, CHALLENGE_ID
 import os
 import requests
 import socketio
+from . import hashcash
 
 sio = socketio.Client()
 sio.connect(os.environ.get("ATTACK_SIO_SERVER", "http://localhost:8887"))
@@ -92,12 +93,23 @@ def login_required(f):
 def panel():
     team = Team.query.filter_by(id=session["team_id"]).first()
     teams = Team.query.all()
+    session["hs_resource"] = secrets.token_hex(16)
+    hs_cmd = hashcash.mint_cmd(session["hs_resource"])
     return render_template(
         "panel.html",
         team=team,
         teams=teams,
         api_info={**api_info, "token": session["token"], "id": session["team_id"]},
+        hs_cmd=hs_cmd,
     )
+
+
+@app.post("/api/hs")
+@login_required
+def hs():
+    session["hs_resource"] = secrets.token_hex(16)
+    hs_cmd = hashcash.mint_cmd(session["hs_resource"])
+    return jsonify({"cmd": hs_cmd})
 
 
 @app.get("/api/jail")
@@ -125,6 +137,10 @@ def try_decode(b: bytes):
 @app.post("/api/attack/<target>")
 @login_required
 def attack(target):
+    if not hashcash.check(
+        session.get("hs_resource", "NONE"), request.json.get("stamp", "")
+    ):
+        return jsonify({"status": "error", "message": "Invalid hashcash stamp"})
     code = request.json["code"]
     if not isinstance(code, str):
         return jsonify({"status": "error", "message": "Code must be a string"})

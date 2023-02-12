@@ -34,6 +34,11 @@
 			<label>Code</label>
 			<textarea name="code"></textarea>
 		</p>
+		<p>
+			<label>PoW</label>
+			<span>Please execute the command <code id="hs-cmd">{{ hs_cmd }}</code> and copy the resulting stamp to below.</span>
+			<input name="stamp">
+		</p>
 		<button type="submit">Attack</button>
 	</form>
 
@@ -160,11 +165,12 @@
 	const initAttackForm = () => {
 		const attackForm = document.querySelector('#attack-form')
 		const editor = initCodeMirror(attackForm.code)
-		attackForm.onsubmit = e => {
+		attackForm.onsubmit = async e => {
 			e.preventDefault()
 			xf.post(`/api/attack/${attackForm.target.value}`, {
 				json: {
-					code: editor.getValue()
+					code: editor.getValue(),
+					stamp: attackForm.stamp.value
 				}
 			}).json(r => {
 				if (r.status === 'ok') {
@@ -180,6 +186,8 @@
 					})
 				}
 			})
+			const cmd = await xf.post('/api/hs').json(r=>r.cmd)
+			document.querySelector('#hs-cmd').textContent = cmd
 		}
 		const DEFAULT_CODE = 'print("Hello World")\n'
 		editor.setValue(DEFAULT_CODE)
